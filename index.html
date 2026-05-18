@@ -117,6 +117,7 @@ h1, h2, h3, .display { font-family: 'Fraunces', serif; font-weight: 300; }
 }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
 
 /* Metric cards */
 .metric {
@@ -246,6 +247,16 @@ h1, h2, h3, .display { font-family: 'Fraunces', serif; font-weight: 300; }
 .xfer-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--text-muted); font-size: 15px; }
 .xfer-flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
 
+/* Reset modal */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(28,24,18,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal { background: var(--surface); border: 0.5px solid var(--border-med); border-radius: var(--radius); padding: 2rem; max-width: 400px; width: 90%; }
+.modal-title { font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 300; margin-bottom: 0.5rem; }
+.modal-body { font-size: 0.82rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 1.5rem; }
+.modal-body ul { margin: 0.5rem 0 0 1rem; }
+.modal-body li { margin-bottom: 3px; }
+.btn.danger { border-color: var(--red); color: var(--red); }
+.btn.danger:hover { background: var(--red-light); }
+
 /* Responsive */
 @media (max-width: 700px) {
   .app { grid-template-columns: 1fr; }
@@ -254,7 +265,7 @@ h1, h2, h3, .display { font-family: 'Fraunces', serif; font-weight: 300; }
   .sidebar-section { display: none; }
   .nav-btn { padding: 7px 10px; font-size: 0.72rem; }
   .main { padding: 1.25rem 1rem; }
-  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .grid2, .grid3, .grid4 { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -278,9 +289,12 @@ h1, h2, h3, .display { font-family: 'Fraunces', serif; font-weight: 300; }
 
     <!-- DASHBOARD -->
     <div id="page-dashboard" class="page active">
-      <div class="page-title">Dashboard</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.25rem">
+        <div class="page-title">Dashboard</div>
+        <button class="btn danger" style="margin-top:6px" onclick="showResetModal()"><i class="ti ti-refresh"></i> New month</button>
+      </div>
       <div class="page-sub">Your spending at a glance</div>
-      <div class="grid3" id="summary-cards"></div>
+      <div class="grid4" id="summary-cards"></div>
       <div id="warn-container"></div>
       <div class="grid2" style="margin-bottom:1rem">
         <div class="card">
@@ -524,10 +538,16 @@ function showFundSub(s) {
 // ── Dashboard ────────────────────────────────────────────────────
 function renderDashboard() {
   const tb=totalBudget(), ts=totalSpent(), rem=tb-ts;
+  const bank=funds.filter(f=>f.type==='bank').reduce((s,f)=>s+f.amount,0);
+  const cash=funds.filter(f=>f.type==='cash').reduce((s,f)=>s+f.amount,0);
+  const lentOut=funds.filter(f=>f.type==='borrowed_out').reduce((s,f)=>s+f.amount,0);
+  const borrowed=funds.filter(f=>f.type==='borrowed_in').reduce((s,f)=>s+f.amount,0);
+  const totalFunds=bank+cash+lentOut-borrowed;
   document.getElementById('summary-cards').innerHTML = `
     <div class="metric"><div class="metric-label">Total budget</div><div class="metric-val">${fmt(tb)}</div></div>
     <div class="metric"><div class="metric-label">Total spent</div><div class="metric-val ${ts>tb?'danger':''}">${fmt(ts)}</div></div>
     <div class="metric"><div class="metric-label">Remaining</div><div class="metric-val ${rem<0?'danger':'success'}">${rem<0?'-':''}${fmt(rem)}</div></div>
+    <div class="metric"><div class="metric-label">Total funds</div><div class="metric-val ${totalFunds<0?'danger':'success'}">${totalFunds<0?'-':''}${fmt(totalFunds)}</div></div>
   `;
   let warns = '';
   categories.forEach(c=>{
@@ -814,6 +834,20 @@ function renderXferHistory() {
   `).join('');
 }
 
+// ── Reset ────────────────────────────────────────────────────────
+function showResetModal() { document.getElementById('reset-modal').style.display='flex'; }
+function hideResetModal() { document.getElementById('reset-modal').style.display='none'; }
+function doReset() {
+  expenses = [];
+  transfers = [];
+  categories = categories.map(c=>({...c, budget: 0}));
+  persist();
+  hideResetModal();
+  renderDashboard();
+  renderCatList();
+  renderXferHistory();
+}
+
 // ── Init ─────────────────────────────────────────────────────────
 document.getElementById('exp-date').value = today();
 document.getElementById('xfer-date').value = today();
@@ -821,5 +855,29 @@ populateCatSelect();
 renderDashboard();
 renderFundList();
 </script>
+<!-- Reset modal -->
+<div id="reset-modal" class="modal-backdrop" style="display:none" onclick="if(event.target===this)hideResetModal()">
+  <div class="modal">
+    <div class="modal-title">Start a new month?</div>
+    <div class="modal-body">
+      This will clear all recorded data for the current month. The following will be <strong>removed</strong>:
+      <ul>
+        <li>All expenses</li>
+        <li>All budget amounts on categories</li>
+        <li>All transfer history</li>
+      </ul>
+      <br>The following will <strong>stay</strong>:
+      <ul>
+        <li>Your categories (names &amp; colors)</li>
+        <li>Your fund entries and balances</li>
+      </ul>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn danger" onclick="doReset()"><i class="ti ti-refresh"></i> Yes, reset</button>
+      <button class="btn" onclick="hideResetModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
