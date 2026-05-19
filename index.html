@@ -330,11 +330,7 @@ h1, h2, h3, .display { font-family: 'Fraunces', serif; font-weight: 300; }
             <div class="form-row"><label>Date</label><input type="date" id="exp-date"></div>
           </div>
           <div class="form-row"><label>Paid from</label>
-            <select id="exp-fund">
-              <option value="bank">Bank account</option>
-              <option value="cash">Cash</option>
-              <option value="borrowed_in">Borrowed / credit</option>
-            </select>
+            <select id="exp-fund"></select>
           </div>
           <div class="form-row"><label>Note (optional)</label>
             <textarea id="exp-note" placeholder="Any extra details..."></textarea>
@@ -519,7 +515,7 @@ function showPage(p) {
   document.getElementById('page-'+p).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>{ if(b.getAttribute('onclick').includes(p)) b.classList.add('active'); });
   if(p==='dashboard') renderDashboard();
-  if(p==='expense') { populateCatSelect(); renderAllExpenses(); }
+  if(p==='expense') { populateCatSelect(); populateExpFundSelect(); renderAllExpenses(); }
   if(p==='categories') renderCatList();
   if(p==='funds') { renderFundList(); populateXferSelects(); renderXferHistory(); }
 }
@@ -584,11 +580,14 @@ function renderRecent() {
   const sorted = [...expenses].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7);
   document.getElementById('recent-list').innerHTML = !sorted.length ? '<div class="empty">No expenses yet</div>' : sorted.map(e=>{
     const c=catById(e.catId);
+    const f=fundById(e.fundId);
+    const fundLabel = f ? f.desc : (e.fund ? (typeLabel[e.fund]||e.fund) : '?');
+    const badgeClass = f ? `badge-${f.type}` : `badge-${e.fund||'bank'}`;
     return `<div class="list-item">
       <div style="width:8px;height:8px;border-radius:50%;background:${c?c.color:'#888'};margin-top:5px;flex-shrink:0"></div>
       <div class="li-body">
         <div class="li-name">${e.item}</div>
-        <div class="li-sub"><span>${c?c.name:'?'}</span><span class="badge badge-${e.fund}">${typeLabel[e.fund]||e.fund}</span><span>${e.date}</span></div>
+        <div class="li-sub"><span>${c?c.name:'?'}</span><span class="badge ${badgeClass}">${fundLabel}</span><span>${e.date}</span></div>
       </div>
       <div class="li-amt">${fmt(e.amount)}</div>
     </div>`;
@@ -613,18 +612,32 @@ function populateCatSelect() {
   document.getElementById('exp-cat').innerHTML = categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
 }
 
+function populateExpFundSelect() {
+  const sel = document.getElementById('exp-fund');
+  if(!funds.length) {
+    sel.innerHTML = '<option value="">— No fund entries yet —</option>';
+    return;
+  }
+  sel.innerHTML = funds.map(f=>`<option value="${f.id}">${f.desc} (${typeLabel[f.type]}) — ${fmt(f.amount)}</option>`).join('');
+}
+
 function addExpense() {
   const catId = parseInt(document.getElementById('exp-cat').value);
   const item = document.getElementById('exp-item').value.trim();
   const amount = parseFloat(document.getElementById('exp-amount').value);
   const date = document.getElementById('exp-date').value || today();
-  const fund = document.getElementById('exp-fund').value;
+  const fundId = parseInt(document.getElementById('exp-fund').value);
   const note = document.getElementById('exp-note').value.trim();
   if(!item) return showErr('exp-err','Please enter an item name.');
   if(!amount||amount<=0) return showErr('exp-err','Please enter a valid amount.');
+  if(!fundId) return showErr('exp-err','Please add a fund entry first (go to Funds tab).');
+  const fund = fundById(fundId);
+  if(!fund) return showErr('exp-err','Selected fund not found.');
   showErr('exp-err','');
-  expenses.push({id:nextId++,catId,item,amount,date,fund,note});
-  persist(); clearExpForm(); renderAllExpenses(); renderDashboard();
+  // Deduct from fund balance
+  fund.amount -= amount;
+  expenses.push({id:nextId++,catId,item,amount,date,fundId,note});
+  persist(); clearExpForm(); populateExpFundSelect(); renderAllExpenses(); renderDashboard();
 }
 
 function clearExpForm() {
@@ -635,19 +648,30 @@ function clearExpForm() {
 
 function deleteExpense(id) {
   if(!confirm('Delete this expense?')) return;
+  const exp = expenses.find(e=>e.id===id);
+  if(exp) {
+    // Restore amount to fund if fund still exists
+    const fund = fundById(exp.fundId);
+    if(fund) fund.amount += exp.amount;
+  }
   expenses = expenses.filter(e=>e.id!==id);
-  persist(); renderAllExpenses(); renderDashboard();
+  persist(); populateExpFundSelect(); renderAllExpenses(); renderDashboard();
+  // Refresh fund list if visible
+  if(document.getElementById('page-funds').classList.contains('active')) renderFundList();
 }
 
 function renderAllExpenses() {
   const sorted = [...expenses].sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById('all-expenses-list').innerHTML = !sorted.length ? '<div class="empty">No expenses logged</div>' : sorted.map(e=>{
     const c=catById(e.catId);
+    const f=fundById(e.fundId);
+    const fundLabel = f ? f.desc : (e.fund ? (typeLabel[e.fund]||e.fund) : '?'); // backwards compat
+    const badgeClass = f ? `badge-${f.type}` : `badge-${e.fund||'bank'}`;
     return `<div class="list-item">
       <div style="width:8px;height:8px;border-radius:50%;background:${c?c.color:'#888'};margin-top:5px;flex-shrink:0"></div>
       <div class="li-body">
         <div class="li-name">${e.item}</div>
-        <div class="li-sub"><span>${c?c.name:'?'}</span><span class="badge badge-${e.fund}">${typeLabel[e.fund]||e.fund}</span><span>${e.date}</span>${e.note?`<span>${e.note}</span>`:''}</div>
+        <div class="li-sub"><span>${c?c.name:'?'}</span><span class="badge ${badgeClass}">${fundLabel}</span><span>${e.date}</span>${e.note?`<span>${e.note}</span>`:''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div class="li-amt">${fmt(e.amount)}</div>
@@ -681,15 +705,45 @@ function deleteCategory(id) {
 
 function renderCatList() {
   document.getElementById('cat-list').innerHTML = !categories.length ? '<div class="empty">No categories</div>' : categories.map(c=>`
-    <div class="list-item">
+    <div class="list-item" id="cat-row-${c.id}">
       <div style="width:12px;height:12px;border-radius:3px;background:${c.color};margin-top:3px;flex-shrink:0"></div>
       <div class="li-body">
         <div class="li-name">${c.name}</div>
-        <div class="li-sub"><span>Budget: ${fmt(c.budget)}</span><span>Spent: ${fmt(spent(c.id))}</span></div>
+        <div class="li-sub" id="cat-sub-${c.id}">
+          <span>Budget: ${fmt(c.budget)}</span>
+          <span>Spent: ${fmt(spent(c.id))}</span>
+          <button class="btn sm" style="padding:2px 8px;font-size:0.7rem" onclick="startEditBudget(${c.id})"><i class="ti ti-pencil"></i> Edit budget</button>
+        </div>
+        <div id="cat-edit-${c.id}" style="display:none;margin-top:6px;display:none">
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="number" id="cat-edit-input-${c.id}" value="${c.budget}" min="0"
+              style="width:140px;padding:5px 8px;font-family:'DM Mono',monospace;font-size:0.82rem;border:0.5px solid var(--accent);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none"
+              onkeydown="if(event.key==='Enter')saveBudget(${c.id});if(event.key==='Escape')cancelEditBudget(${c.id})">
+            <button class="btn primary sm" onclick="saveBudget(${c.id})"><i class="ti ti-check"></i></button>
+            <button class="btn sm" onclick="cancelEditBudget(${c.id})"><i class="ti ti-x"></i></button>
+          </div>
+        </div>
       </div>
       <button class="li-del" onclick="deleteCategory(${c.id})" aria-label="Delete ${c.name}"><i class="ti ti-trash"></i></button>
     </div>
   `).join('');
+}
+
+function startEditBudget(id) {
+  document.getElementById(`cat-edit-${id}`).style.display = 'block';
+  const input = document.getElementById(`cat-edit-input-${id}`);
+  input.focus(); input.select();
+}
+
+function cancelEditBudget(id) {
+  document.getElementById(`cat-edit-${id}`).style.display = 'none';
+}
+
+function saveBudget(id) {
+  const val = parseFloat(document.getElementById(`cat-edit-input-${id}`).value);
+  if(isNaN(val)||val<0) return;
+  const cat = categories.find(c=>c.id===id);
+  if(cat) { cat.budget = val; persist(); renderCatList(); renderDashboard(); }
 }
 
 // ── Funds ────────────────────────────────────────────────────────
@@ -706,13 +760,13 @@ function addFund() {
   document.getElementById('fund-desc').value='';
   document.getElementById('fund-amt').value='';
   document.getElementById('fund-note').value='';
-  renderFundList(); populateXferSelects();
+  renderFundList(); populateXferSelects(); populateExpFundSelect();
 }
 
 function deleteFund(id) {
   if(!confirm('Delete this fund entry?')) return;
   funds = funds.filter(f=>f.id!==id);
-  persist(); renderFundList(); populateXferSelects();
+  persist(); renderFundList(); populateXferSelects(); populateExpFundSelect();
 }
 
 function renderFundList() {
@@ -852,6 +906,7 @@ function doReset() {
 document.getElementById('exp-date').value = today();
 document.getElementById('xfer-date').value = today();
 populateCatSelect();
+populateExpFundSelect();
 renderDashboard();
 renderFundList();
 </script>
