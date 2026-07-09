@@ -770,15 +770,52 @@ function deleteFund(id) {
 }
 
 function renderFundList() {
+  const typeOptions = Object.entries(typeLabel).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
   document.getElementById('fund-list').innerHTML = !funds.length ? '<div class="empty">No fund entries</div>' : funds.map(f=>`
-    <div class="list-item">
-      <div class="li-body">
-        <div class="li-name">${f.desc}</div>
-        <div class="li-sub"><span class="badge badge-${f.type}">${typeLabel[f.type]}</span>${f.note?`<span>${f.note}</span>`:''}</div>
+    <div class="list-item" style="flex-direction:column;align-items:stretch;gap:6px">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div class="li-body">
+          <div class="li-name">${f.desc}</div>
+          <div class="li-sub">
+            <span class="badge badge-${f.type}">${typeLabel[f.type]}</span>
+            ${f.note?`<span>${f.note}</span>`:''}
+            <button class="btn sm" style="padding:2px 8px;font-size:0.7rem" onclick="startEditFund(${f.id})"><i class="ti ti-pencil"></i> Edit</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          <div class="li-amt ${f.type==='borrowed_in'?'danger':''}">${f.type==='borrowed_in'?'-':''}${fmt(f.amount)}</div>
+          <button class="li-del" onclick="deleteFund(${f.id})" aria-label="Delete"><i class="ti ti-trash"></i></button>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <div class="li-amt ${f.type==='borrowed_in'?'danger':''}">${f.type==='borrowed_in'?'-':''}${fmt(f.amount)}</div>
-        <button class="li-del" onclick="deleteFund(${f.id})" aria-label="Delete"><i class="ti ti-trash"></i></button>
+      <div id="fund-edit-${f.id}" style="display:none;background:var(--bg);border-radius:var(--radius-sm);padding:10px;border:0.5px solid var(--border-med)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div>
+            <div style="font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">Description</div>
+            <input type="text" id="fund-edit-desc-${f.id}" value="${f.desc.replace(/"/g,'&quot;')}"
+              style="width:100%;padding:5px 8px;font-family:'DM Mono',monospace;font-size:0.82rem;border:0.5px solid var(--border-med);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none">
+          </div>
+          <div>
+            <div style="font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">Type</div>
+            <select id="fund-edit-type-${f.id}"
+              style="width:100%;padding:5px 8px;font-family:'DM Mono',monospace;font-size:0.82rem;border:0.5px solid var(--border-med);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none">
+              ${Object.entries(typeLabel).map(([v,l])=>`<option value="${v}"${v===f.type?' selected':''}>${l}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <div style="font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">Amount (₦)</div>
+            <input type="number" id="fund-edit-amt-${f.id}" value="${f.amount}" min="0"
+              style="width:100%;padding:5px 8px;font-family:'DM Mono',monospace;font-size:0.82rem;border:0.5px solid var(--border-med);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none">
+          </div>
+          <div>
+            <div style="font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">Note</div>
+            <input type="text" id="fund-edit-note-${f.id}" value="${(f.note||'').replace(/"/g,'&quot;')}" placeholder="Optional"
+              style="width:100%;padding:5px 8px;font-family:'DM Mono',monospace;font-size:0.82rem;border:0.5px solid var(--border-med);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none">
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn primary sm" onclick="saveFund(${f.id})"><i class="ti ti-check"></i> Save</button>
+          <button class="btn sm" onclick="cancelEditFund(${f.id})"><i class="ti ti-x"></i> Cancel</button>
+        </div>
       </div>
     </div>
   `).join('');
@@ -801,6 +838,38 @@ function renderFundList() {
       </div>
     </div>
   `;
+}
+
+function startEditFund(id) {
+  // Close any other open fund editors first
+  funds.forEach(f=>{ if(f.id!==id) { const el=document.getElementById(`fund-edit-${f.id}`); if(el) el.style.display='none'; } });
+  const el = document.getElementById(`fund-edit-${id}`);
+  if(el) { el.style.display='block'; document.getElementById(`fund-edit-desc-${id}`).focus(); }
+}
+
+function cancelEditFund(id) {
+  const el = document.getElementById(`fund-edit-${id}`);
+  if(el) el.style.display='none';
+}
+
+function saveFund(id) {
+  const desc = document.getElementById(`fund-edit-desc-${id}`).value.trim();
+  const type = document.getElementById(`fund-edit-type-${id}`).value;
+  const amount = parseFloat(document.getElementById(`fund-edit-amt-${id}`).value);
+  const note = document.getElementById(`fund-edit-note-${id}`).value.trim();
+  if(!desc) return alert('Description cannot be empty.');
+  if(isNaN(amount)||amount<0) return alert('Please enter a valid amount.');
+  const fund = fundById(id);
+  if(!fund) return;
+  fund.desc = desc;
+  fund.type = type;
+  fund.amount = amount;
+  fund.note = note;
+  persist();
+  renderFundList();
+  populateXferSelects();
+  populateExpFundSelect();
+  renderDashboard();
 }
 
 // ── Transfers ────────────────────────────────────────────────────
