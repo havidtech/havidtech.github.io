@@ -10,4 +10,4 @@ Two small, self-contained, no-build web tools hosted on one GitHub Pages site:
   desktop notifications.
 
 Both tools link to each other and each stores its own data locally (`bt_*` and
-`er_*` keys), so they never collide.
+`er_*` keys), so they never collide at all.
