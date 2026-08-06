@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eye Rest · 20-20-20</title>
+<meta name="theme-color" content="#0E1419">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+:root {
+  --bg: #0E1419;
+  --bg-soft: #141C23;
+  --surface: #182129;
+  --surface2: #1E2830;
+  --border: rgba(255,255,255,0.07);
+  --border-med: rgba(255,255,255,0.13);
+  --text: #E6ECEF;
+  --text-muted: #8A97A0;
+  --text-faint: #566169;
+  --teal: #5FC9C0;
+  --teal-dim: rgba(95,201,192,0.15);
+  --amber: #E3A567;
+  --amber-dim: rgba(227,165,103,0.15);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(120% 90% at 50% -10%, #17222B 0%, var(--bg) 55%) fixed;
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Top bar */
+.topbar {
+  width: 100%; max-width: 560px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.5rem 1.5rem 0;
+}
+.back-link {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 0.78rem; color: var(--text-faint); text-decoration: none;
+  padding: 6px 10px; border-radius: var(--radius-sm); transition: all 0.18s;
+}
+.back-link:hover { color: var(--text-muted); background: var(--surface); }
+.brand { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-muted); letter-spacing: 0.02em; }
+.brand i { color: var(--teal); font-size: 17px; }
+
+.wrap { width: 100%; max-width: 560px; padding: 1.75rem 1.5rem 3rem; }
+
+/* Timer */
+.timer {
+  text-align: center;
+  padding: 1.5rem 0 0.5rem;
+}
+.phase-label {
+  font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 2rem; transition: color 0.4s;
+  min-height: 1rem;
+}
+.ring-wrap { position: relative; width: 300px; height: 300px; margin: 0 auto 2.25rem; }
+.ring-glow {
+  position: absolute; inset: 22%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--teal-dim) 0%, transparent 70%);
+  filter: blur(18px); transition: background 0.5s; pointer-events: none;
+}
+.ring-wrap svg { position: relative; transform: rotate(-90deg); width: 100%; height: 100%; }
+.ring-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 6; }
+.ring-fg {
+  fill: none; stroke: var(--teal); stroke-width: 6; stroke-linecap: round;
+  transition: stroke-dashoffset 0.95s linear, stroke 0.4s;
+}
+.ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.time-big { font-size: 4.4rem; font-weight: 200; letter-spacing: -0.01em; line-height: 1; font-variant-numeric: tabular-nums; }
+.time-hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.6rem; letter-spacing: 0.02em; }
+
+/* Controls */
+.controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 22px; font-family: inherit; font-size: 0.85rem; font-weight: 400;
+  border: 1px solid var(--border-med); border-radius: 100px;
+  background: var(--surface); color: var(--text);
+  cursor: pointer; transition: all 0.18s; letter-spacing: 0.01em;
+}
+.btn:hover { background: var(--surface2); border-color: rgba(255,255,255,0.2); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--teal); color: #06231F; border-color: var(--teal); font-weight: 500; }
+.btn.primary:hover { background: #74d6cd; border-color: #74d6cd; }
+.btn.ghost { background: transparent; }
+.btn i { font-size: 17px; }
+
+/* Cards */
+.section { margin-top: 2.5rem; }
+.section-head {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 0.9rem; padding: 0 4px;
+}
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.4rem; }
+
+.stats-row { display: flex; gap: 1rem; }
+.stat { flex: 1; }
+.stat-val { font-size: 2rem; font-weight: 200; letter-spacing: -0.01em; }
+.stat-val .u { font-size: 1rem; color: var(--text-muted); font-weight: 300; margin-left: 2px; }
+.stat-label { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; letter-spacing: 0.02em; }
+.stat + .stat { border-left: 1px solid var(--border); padding-left: 1rem; }
+
+/* Settings */
+.set-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.set-row:last-child { border-bottom: none; }
+.set-label { font-size: 0.85rem; }
+.set-label small { display: block; font-size: 0.7rem; color: var(--text-faint); margin-top: 1px; }
+.num-input {
+  width: 78px; padding: 7px 10px; text-align: center;
+  font-family: inherit; font-size: 0.9rem; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border-med); border-radius: var(--radius-sm);
+  background: var(--bg-soft); color: var(--text); outline: none; transition: border-color 0.15s;
+}
+.num-input:focus { border-color: var(--teal); }
+.switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; inset: 0; background: var(--surface2); border: 1px solid var(--border-med); border-radius: 24px; cursor: pointer; transition: 0.2s; }
+.slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 2px; top: 2px; background: #cfd8dd; border-radius: 50%; transition: 0.2s; }
+.switch input:checked + .slider { background: var(--teal); border-color: var(--teal); }
+.switch input:checked + .slider::before { transform: translateX(18px); background: #06231F; }
+
+.note { font-size: 0.76rem; color: var(--text-faint); margin-top: 1.5rem; line-height: 1.7; text-align: center; padding: 0 0.5rem; }
+
+/* Break overlay */
+.break {
+  position: fixed; inset: 0; z-index: 100;
+  background: radial-gradient(120% 100% at 50% 40%, #10201F 0%, #070C0F 80%);
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 2rem; opacity: 0; transition: opacity 0.5s;
+}
+.break.show { display: flex; opacity: 1; }
+.break-pacer { position: relative; width: 160px; height: 160px; margin-bottom: 2.25rem; display: flex; align-items: center; justify-content: center; }
+.break-pacer .pulse {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 1.5px solid var(--amber);
+  animation: breathe 5s ease-in-out infinite;
+}
+.break-pacer .eye { font-size: 2.6rem; color: var(--amber); z-index: 1; }
+@keyframes breathe {
+  0%, 100% { transform: scale(0.62); opacity: 0.9; }
+  50% { transform: scale(1); opacity: 0.25; }
+}
+.break-title { font-size: 2rem; font-weight: 300; letter-spacing: -0.01em; margin-bottom: 0.6rem; color: var(--text); }
+.break-instr { font-size: 0.95rem; color: var(--text-muted); max-width: 360px; margin-bottom: 0.4rem; line-height: 1.7; }
+.break-instr strong { color: var(--amber); font-weight: 500; }
+.break-blink { font-size: 0.82rem; color: var(--text-faint); margin-bottom: 2rem; letter-spacing: 0.03em; }
+.break-count { font-size: 3.4rem; font-weight: 200; color: var(--amber); font-variant-numeric: tabular-nums; margin-bottom: 2.25rem; line-height: 1; }
+.break .btn { border-color: rgba(255,255,255,0.15); color: var(--text-muted); }
+.break .btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+@media (max-width: 520px) {
+  .ring-wrap { width: 260px; height: 260px; }
+  .time-big { font-size: 3.8rem; }
+  .stats-row { gap: 0.75rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back-link" href="./"><i class="ti ti-arrow-left"></i> Budget tracker</a>
+  <span class="brand"><i class="ti ti-eye"></i> Eye Rest</span>
+</div>
+
+<div class="wrap">
+
+  <!-- Timer -->
+  <div class="timer">
+    <div class="phase-label" id="phase-label">Ready when you are</div>
+    <div class="ring-wrap">
+      <div class="ring-glow" id="ring-glow"></div>
+      <svg viewBox="0 0 300 300">
+        <circle class="ring-bg" cx="150" cy="150" r="135"></circle>
+        <circle class="ring-fg" id="ring-fg" cx="150" cy="150" r="135"></circle>
+      </svg>
+      <div class="ring-center">
+        <div class="time-big" id="time-big">20:00</div>
+        <div class="time-hint" id="time-hint">until your next eye break</div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn primary" id="start-btn" onclick="toggleTimer()"><i class="ti ti-player-play"></i> Start</button>
+      <button class="btn ghost" onclick="breakNow()"><i class="ti ti-player-track-next"></i> Break now</button>
+      <button class="btn ghost" onclick="resetTimer()" title="Reset"><i class="ti ti-refresh"></i></button>
+    </div>
+  </div>
+
+  <!-- Today -->
+  <div class="section">
+    <div class="section-head"><i class="ti ti-calendar-stats" style="font-size:14px"></i> Today</div>
+    <div class="card">
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-val" id="stat-breaks">0</div>
+          <div class="stat-label">eye breaks taken</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="stat-focus">0<span class="u">m</span></div>
+          <div class="stat-label">time focused</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="section">
+    <div class="section-head"><i class="ti ti-adjustments" style="font-size:14px"></i> Settings</div>
+    <div class="card">
+      <div class="set-row">
+        <div class="set-label">Work interval <small>minutes between breaks</small></div>
+        <input type="number" class="num-input" id="set-work" min="1" max="120" value="20">
+      </div>
+      <div class="set-row">
+        <div class="set-label">Break length <small>seconds to look away</small></div>
+        <input type="number" class="num-input" id="set-break" min="5" max="300" value="20">
+      </div>
+      <div class="set-row">
+        <div class="set-label">Sound alerts <small>soft chime at break start &amp; end</small></div>
+        <label class="switch"><input type="checkbox" id="set-sound" checked><span class="slider"></span></label>
+      </div>
+      <div class="set-row">
+        <div class="set-label">Desktop notifications <small>alerts even when tab is hidden</small></div>
+        <label class="switch"><input type="checkbox" id="set-notify"><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">Keep this tab open while you work — the countdown shows in the tab title, so you can glance at it any time.</div>
+</div>
+
+<!-- Break overlay -->
+<div class="break" id="break">
+  <div class="break-pacer">
+    <div class="pulse"></div>
+    <i class="ti ti-eye eye"></i>
+  </div>
+  <div class="break-title">Rest your eyes</div>
+  <div class="break-instr">Look at something at least <strong>20 feet (6 m)</strong> away — out a window is perfect.</div>
+  <div class="break-blink">Soften your focus and blink slowly with the circle</div>
+  <div class="break-count" id="break-count">20</div>
+  <button class="btn ghost" onclick="endBreak()"><i class="ti ti-x"></i> Skip</button>
+</div>
+
+<script>
+// ── Persistence (mirrors the budget tracker's load/save pattern, er_* keys) ──
+const SKEY = 'er_settings', STKEY = 'er_stats';
+const DEF = { work: 20, brk: 20, sound: true, notify: false };
+function loadJSON(k, def) { try { const v = localStorage.getItem(k); return v ? { ...def, ...JSON.parse(v) } : { ...def }; } catch(e) { return { ...def }; } }
+function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
+
+let settings = loadJSON(SKEY, DEF);
+
+function todayKey() { return new Date().toISOString().slice(0, 10); }
+let stats = loadJSON(STKEY, { date: todayKey(), breaks: 0, focusSecs: 0 });
+if (stats.date !== todayKey()) { stats = { date: todayKey(), breaks: 0, focusSecs: 0 }; saveJSON(STKEY, stats); }
+
+// ── Timer state ──────────────────────────────────────────────────
+const R = 135, CIRC = 2 * Math.PI * R;
+const ringFg = document.getElementById('ring-fg');
+const ringGlow = document.getElementById('ring-glow');
+ringFg.style.strokeDasharray = CIRC;
+
+let phase = 'idle';   // 'idle' | 'work' | 'break'
+let remaining = settings.work * 60;
+let ticker = null;
+
+function phaseTotal() { return phase === 'break' ? settings.brk : settings.work * 60; }
+function fmtClock(s) { return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0'); }
+
+function render() {
+  // ring
+  const total = phaseTotal() || 1;
+  const frac = Math.max(0, Math.min(1, remaining / total));
+  ringFg.style.strokeDashoffset = CIRC * (1 - frac);
+  const color = phase === 'break' ? 'var(--amber)' : 'var(--teal)';
+  ringFg.style.stroke = color;
+  ringGlow.style.background = phase === 'break'
+    ? 'radial-gradient(circle, var(--amber-dim) 0%, transparent 70%)'
+    : 'radial-gradient(circle, var(--teal-dim) 0%, transparent 70%)';
+  // digits
+  const big = document.getElementById('time-big');
+  const hint = document.getElementById('time-hint');
+  if (phase === 'break') { big.textContent = remaining; hint.textContent = 'seconds — look far away'; }
+  else { big.textContent = fmtClock(remaining); hint.textContent = 'until your next eye break'; }
+  document.getElementById('break-count').textContent = remaining;
+  updateTitle();
+}
+
+function updateTitle() {
+  if (phase === 'work') document.title = fmtClock(remaining) + ' · Eye Rest';
+  else if (phase === 'break') document.title = 'Rest! ' + remaining + 's · Eye Rest';
+  else document.title = 'Eye Rest · 20-20-20';
+}
+
+function setPhaseLabel() {
+  const l = document.getElementById('phase-label');
+  l.textContent = phase === 'idle' ? 'Ready when you are' : phase === 'work' ? 'Focusing' : 'Eye break';
+}
+
+function setStartBtn() {
+  const b = document.getElementById('start-btn');
+  if (ticker) b.innerHTML = '<i class="ti ti-player-pause"></i> Pause';
+  else b.innerHTML = '<i class="ti ti-player-play"></i> ' + (phase === 'idle' ? 'Start' : 'Resume');
+}
+
+function renderStats() {
+  document.getElementById('stat-breaks').textContent = stats.breaks;
+  document.getElementById('stat-focus').innerHTML = Math.round(stats.focusSecs / 60) + '<span class="u">m</span>';
+}
+
+// ── Controls ─────────────────────────────────────────────────────
+function toggleTimer() {
+  if (ticker) { pauseTimer(); return; }
+  if (phase === 'idle') { phase = 'work'; remaining = settings.work * 60; }
+  startTicking();
+}
+function startTicking() {
+  primeAudio();
+  if (settings.notify && 'Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+  ticker = setInterval(tick, 1000);
+  setPhaseLabel(); setStartBtn(); render();
+}
+function pauseTimer() {
+  clearInterval(ticker); ticker = null;
+  document.getElementById('phase-label').textContent = 'Paused';
+  setStartBtn();
+}
+function resetTimer() {
+  clearInterval(ticker); ticker = null;
+  phase = 'idle'; remaining = settings.work * 60;
+  document.getElementById('break').classList.remove('show');
+  setPhaseLabel(); setStartBtn(); render();
+}
+function breakNow() {
+  primeAudio();
+  startBreak();
+  if (!ticker) ticker = setInterval(tick, 1000);
+  setStartBtn();
+}
+
+function tick() {
+  if (phase === 'work') { stats.focusSecs++; saveStatsThrottled(); }
+  remaining--;
+  if (remaining <= 0) {
+    if (phase === 'work') return startBreak();
+    return endBreak();
+  }
+  render();
+}
+
+// ── Break flow ───────────────────────────────────────────────────
+function startBreak() {
+  phase = 'break';
+  remaining = settings.brk;
+  beep('start');
+  notify('Time for an eye break', 'Look ~20 ft (6 m) away for ' + settings.brk + ' seconds.');
+  document.getElementById('break').classList.add('show');
+  setPhaseLabel(); render();
+}
+function endBreak() {
+  if (phase === 'break') {
+    stats.breaks++;
+    saveJSON(STKEY, stats);
+    renderStats();
+    beep('end');
+    notify('Break done', 'Next eye break in ' + settings.work + ' minutes.');
+  }
+  document.getElementById('break').classList.remove('show');
+  phase = 'work';
+  remaining = settings.work * 60;
+  setPhaseLabel(); setStartBtn(); render();
+}
+
+// ── Sound (Web Audio — no external files) ────────────────────────
+let audioCtx = null;
+function primeAudio() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+function beep(kind) {
+  if (!settings.sound || !audioCtx) return;
+  const now = audioCtx.currentTime;
+  const notes = kind === 'start' ? [587.33, 880] : [880, 587.33]; // D5→A5 / A5→D5
+  notes.forEach((f, i) => {
+    const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+    osc.type = 'sine'; osc.frequency.value = f;
+    osc.connect(g); g.connect(audioCtx.destination);
+    const t = now + i * 0.22;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.22, t + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+    osc.start(t); osc.stop(t + 0.42);
+  });
+}
+
+// ── Notifications ────────────────────────────────────────────────
+function notify(title, body) {
+  if (!settings.notify || !('Notification' in window) || Notification.permission !== 'granted') return;
+  try { new Notification(title, { body, tag: 'eye-rest', renotify: true }); } catch(e) {}
+}
+
+// ── Settings wiring ──────────────────────────────────────────────
+function fillSettings() {
+  document.getElementById('set-work').value = settings.work;
+  document.getElementById('set-break').value = settings.brk;
+  document.getElementById('set-sound').checked = settings.sound;
+  document.getElementById('set-notify').checked = settings.notify;
+}
+document.getElementById('set-work').addEventListener('change', e => {
+  const v = Math.max(1, Math.min(120, parseInt(e.target.value) || 20));
+  settings.work = v; e.target.value = v; saveJSON(SKEY, settings);
+  if (phase !== 'break' && !ticker) { remaining = settings.work * 60; render(); }
+});
+document.getElementById('set-break').addEventListener('change', e => {
+  const v = Math.max(5, Math.min(300, parseInt(e.target.value) || 20));
+  settings.brk = v; e.target.value = v; saveJSON(SKEY, settings);
+});
+document.getElementById('set-sound').addEventListener('change', e => {
+  settings.sound = e.target.checked; saveJSON(SKEY, settings);
+  if (e.target.checked) { primeAudio(); beep('start'); }
+});
+document.getElementById('set-notify').addEventListener('change', e => {
+  settings.notify = e.target.checked; saveJSON(SKEY, settings);
+  if (e.target.checked && 'Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+});
+
+// throttle stats writes so we don't hit localStorage every second
+let lastSave = 0;
+function saveStatsThrottled() {
+  const t = (performance && performance.now) ? performance.now() : 0;
+  if (t - lastSave > 15000) { saveJSON(STKEY, stats); lastSave = t; }
+}
+window.addEventListener('beforeunload', () => saveJSON(STKEY, stats));
+
+// ── Init ─────────────────────────────────────────────────────────
+fillSettings();
+renderStats();
+setPhaseLabel();
+setStartBtn();
+render();
+</script>
+</body>
+</html>
